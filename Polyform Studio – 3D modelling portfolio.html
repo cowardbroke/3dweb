@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Polyform Studio – 3D modelling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#cfd2d9;--bg2:#e3e5ea;--fg:#16181d;--mut:#4f5560;--panel:rgba(255,255,255,.55);--line:rgba(22,24,29,.2);--sel:#e8710a;--grid:#9aa0ab;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#262a33;--bg2:#1d2027;--fg:#eceef2;--mut:#a3a9b5;--panel:rgba(18,20,26,.6);--line:rgba(236,238,242,.2);--sel:#ff9a2e;--grid:#454b58;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#262a33;--bg2:#1d2027;--fg:#eceef2;--mut:#a3a9b5;--panel:rgba(18,20,26,.6);--line:rgba(236,238,242,.2);--sel:#ff9a2e;--grid:#454b58;color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--sel);outline-offset:3px}
+nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top,0px)) 24px 14px;background:linear-gradient(var(--bg),transparent)}
+.logo{font-weight:800;font-size:1.25rem;letter-spacing:-.02em;text-decoration:none;display:flex;gap:.5rem;align-items:center}
+.logo i{width:14px;height:14px;background:var(--sel);transform:rotate(45deg);display:block}
+nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+nav ul a{text-decoration:none;color:var(--mut);font-weight:600}
+nav ul a:hover{color:var(--fg)}
+@media(max-width:600px){nav ul li:not(:last-child){display:none}}
+.hero{position:relative;height:100svh;min-height:560px;overflow:hidden;background:radial-gradient(120% 90% at 50% 100%,var(--bg2),var(--bg))}
+.hero canvas,.view-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:grab}
+.hero canvas:active,.view-stage canvas:active{cursor:grabbing}
+.copy{position:absolute;left:24px;right:24px;bottom:8vh;max-width:760px;pointer-events:none}
+.copy h1{font-size:clamp(2.4rem,7.2vw,5.6rem);line-height:.98;letter-spacing:-.035em;margin:0 0 1rem;font-weight:800}
+.copy p{font-size:clamp(1rem,1.6vw,1.2rem);color:var(--mut);max-width:46ch;margin:0 0 1.4rem}
+.btn{pointer-events:auto;display:inline-block;padding:.8rem 1.3rem;background:var(--fg);color:var(--bg);text-decoration:none;font-weight:600;border-radius:4px;margin-right:.6rem;border:0;font:inherit;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--fg);outline:1.5px solid var(--line)}
+.btn:hover{background:var(--sel);color:#111}
+.hud{position:absolute;right:24px;top:calc(76px + env(safe-area-inset-top,0px));font-size:.8rem;color:var(--mut);text-align:right;pointer-events:none;line-height:1.5}
+.hud b{color:var(--sel)}
+section{padding:96px 24px;max-width:1180px;margin:0 auto}
+h2{font-size:clamp(1.8rem,4vw,3rem);letter-spacing:-.03em;line-height:1.05;margin:0 0 .8rem;font-weight:800;max-width:18ch}
+.lead{color:var(--mut);max-width:56ch;margin:0 0 2.2rem}
+.viewer{display:grid;grid-template-columns:200px 1fr;border:1px solid var(--line);background:var(--panel);border-radius:6px;overflow:hidden;backdrop-filter:blur(8px)}
+.tools{padding:16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:18px}
+.tools h3{margin:0 0 6px;font-size:.85rem;color:var(--mut);font-weight:600}
+.opts{display:flex;flex-direction:column;gap:4px}
+.opts button,.seg button{font:inherit;font-size:.92rem;text-align:left;padding:6px 10px;border:1px solid transparent;background:none;color:var(--fg);border-radius:3px;cursor:pointer}
+.opts button:hover,.seg button:hover{background:var(--line)}
+.opts button[aria-pressed="true"],.seg button[aria-pressed="true"]{border-color:var(--sel);color:var(--sel);font-weight:600}
+.sw{display:flex;gap:8px;flex-wrap:wrap}
+.sw button{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.sw button[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--bg)}
+.view-stage{position:relative;min-height:480px;background:radial-gradient(90% 90% at 50% 40%,var(--bg2),var(--bg))}
+.seg{position:absolute;top:12px;left:12px;z-index:2;display:flex;background:var(--panel);border:1px solid var(--line);border-radius:4px;backdrop-filter:blur(6px)}
+.stats{position:absolute;bottom:12px;left:14px;font-size:.8rem;color:var(--mut);z-index:2;pointer-events:none}
+.stats b{color:var(--fg)}
+.tip{position:absolute;bottom:12px;right:14px;font-size:.8rem;color:var(--mut);z-index:2;pointer-events:none}
+@media(max-width:760px){.viewer{grid-template-columns:1fr}.tools{border-right:0;border-bottom:1px solid var(--line);flex-direction:row;flex-wrap:wrap}.view-stage{min-height:420px}}
+.work{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.card{perspective:800px;text-decoration:none}
+.art{aspect-ratio:4/5;border-radius:6px;position:relative;overflow:hidden;transform-style:preserve-3d;transition:transform .15s ease-out;border:1px solid var(--line)}
+.art::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.25),transparent 45%)}
+.a1{background:conic-gradient(from 210deg at 50% 60%,#d9d4cc,#8b93a3,#d9d4cc,#5d6575,#d9d4cc)}
+.a2{background:radial-gradient(circle at 30% 30%,#ffd29c,transparent 40%),repeating-linear-gradient(60deg,#2b2f3a 0 14px,#3b4150 14px 28px)}
+.a3{background:radial-gradient(circle at 50% 55%,#f4f1ea 0 28%,#9aa0ab 29% 31%,transparent 32%),conic-gradient(#4a5160,#c7cbd3,#4a5160)}
+.a4{background:linear-gradient(160deg,#e8710a,#7b3a10 60%,#2b2f3a)}
+.card h3{margin:.8rem 0 0;font-size:1.1rem;letter-spacing:-.01em}
+.card p{margin:0;color:var(--mut);font-size:.92rem}
+.svc{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:0;border-top:1px solid var(--line)}
+.svc div{padding:22px 22px 28px 0;border-bottom:1px solid var(--line)}
+.svc h3{margin:0 0 .4rem;font-size:1.2rem}
+.svc p{margin:0;color:var(--mut)}
+.facts{display:flex;flex-wrap:wrap;gap:36px 64px;margin-top:2.4rem}
+.facts div{font-size:.95rem;color:var(--mut)}
+.facts b{display:block;font-size:2.4rem;color:var(--fg);letter-spacing:-.03em}
+.cta{background:var(--fg);color:var(--bg);max-width:none;margin-top:40px}
+.cta>div{max-width:1180px;margin:0 auto}
+.cta h2{max-width:20ch}
+.cta .btn{background:var(--sel);color:#111;margin-top:.6rem}
+footer{padding:28px 24px;color:var(--mut);font-size:.88rem;max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.nogl{display:none;position:absolute;inset:0;place-items:center;color:var(--mut);text-align:center;padding:24px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.art{transition:none}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="logo" href="#top"><i></i>Polyform</a>
+  <ul><li><a href="#viewer">Viewer</a></li><li><a href="#work">Work</a></li><li><a href="#services">Services</a></li><li><a href="#contact">Contact</a></li></ul>
+</nav>
+
+<header class="hero" id="top">
+  <canvas id="hc" aria-label="Interactive 3D scene: drag to rotate, click a shape to select it"></canvas>
+  <div class="hud" aria-hidden="true">Drag to orbit<br>Click a shape to select<br><b id="sel">Nothing selected</b></div>
+  <div class="copy">
+    <h1>3D models that hold up from every angle.</h1>
+    <p>Polyform is a modelling studio for products, game worlds and characters. Clean topology, honest materials, files your team can use on day one.</p>
+    <a class="btn" href="#viewer">Open the viewer</a><a class="btn ghost" href="#work">See our work</a>
+  </div>
+  <div class="nogl" id="nogl">3D preview needs WebGL, which this browser has turned off.</div>
+</header>
+
+<section id="viewer">
+  <h2>Pick a model. Turn it over.</h2>
+  <p class="lead">A live look at how we check our own work: shaded, as a wireframe, and as raw vertices.</p>
+  <div class="viewer">
+    <div class="tools">
+      <div><h3>Model</h3><div class="opts" id="shapes">
+        <button data-s="knot" aria-pressed="true">Torus knot</button>
+        <button data-s="crystal" aria-pressed="false">Crystal</button>
+        <button data-s="ring" aria-pressed="false">Ring</button>
+        <button data-s="lattice" aria-pressed="false">Lattice cube</button>
+        <button data-s="terrain" aria-pressed="false">Terrain</button></div></div>
+      <div><h3>Material</h3><div class="sw" id="colors"></div></div>
+      <div><h3>Motion</h3><div class="opts"><button id="auto" aria-pressed="true">Auto-rotate</button></div></div>
+    </div>
+    <div class="view-stage">
+      <div class="seg" id="modes">
+        <button data-m="solid" aria-pressed="true">Solid</button><button data-m="wire" aria-pressed="false">Wire</button><button data-m="points" aria-pressed="false">Points</button>
+      </div>
+      <canvas id="vc" aria-label="Interactive model viewer: drag to rotate, scroll to zoom"></canvas>
+      <div class="stats" id="stats"></div>
+      <div class="tip">Drag to rotate · pinch or scroll to zoom</div>
+    </div>
+  </div>
+</section>
+
+<section id="work">
+  <h2>Recent builds</h2>
+  <p class="lead">Four projects from this year. Hover a card to tilt it.</p>
+  <div class="work">
+    <a class="card" href="#contact"><div class="art a1"></div><h3>Aether lounge chair</h3><p>Product visualisation · 1.2M tris</p></a>
+    <a class="card" href="#contact"><div class="art a2"></div><h3>Neon Quarter</h3><p>Game environment · modular kit</p></a>
+    <a class="card" href="#contact"><div class="art a3"></div><h3>Orbit field watch</h3><p>Hard-surface · CAD to render</p></a>
+    <a class="card" href="#contact"><div class="art a4"></div><h3>Kelp keeper</h3><p>Character sculpt · rigged</p></a>
+  </div>
+</section>
+
+<section id="services">
+  <h2>What we model</h2>
+  <div class="svc">
+    <div><h3>Product & CAD</h3><p>Photoreal models from sketches or STEP files, ready for catalogues and configurators.</p></div>
+    <div><h3>Game assets</h3><p>Low-poly, baked and optimised for Unity, Unreal and the web.</p></div>
+    <div><h3>Characters</h3><p>Sculpted, retopologised and rigged, with clean UVs.</p></div>
+    <div><h3>Architecture</h3><p>Interiors and exteriors with lighting scenes that match the brief.</p></div>
+  </div>
+  <div class="facts">
+    <div><b>240+</b>models delivered</div><div><b>12 years</b>in production</div><div><b>38</b>studios and brands</div>
+  </div>
+</section>
+
+<section class="cta" id="contact"><div>
+  <h2>Have something that needs a third dimension?</h2>
+  <p class="lead" style="color:inherit;opacity:.75">Send a sketch, a reference or a rough idea. We reply within two working days.</p>
+  <a class="btn" href="mailto:hello@polyform.studio">Email the studio</a>
+</div></section>
+<footer><span>© 2026 Polyform Studio</span><span>hello@polyform.studio</span></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Card tilt
+document.querySelectorAll('.card').forEach(function(c){var a=c.querySelector('.art');
+  c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;a.style.transform='rotateY('+(x*18)+'deg) rotateX('+(-y*18)+'deg)'});
+  c.addEventListener('pointerleave',function(){a.style.transform=''})});
+if(typeof THREE==='undefined'){document.getElementById('nogl').style.display='grid';return}
+var CLAY=0xd9d4cc,SEL=0xe8710a;
+function setup(canvas,fov,z){
+  var r;try{r=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true})}catch(e){return null}
+  r.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  var s=new THREE.Scene(),c=new THREE.PerspectiveCamera(fov,1,.1,100);c.position.z=z;
+  var p=canvas.parentElement;
+  function f(){var w=p.clientWidth,h=p.clientHeight;r.setSize(w,h,false);c.aspect=w/h;c.updateProjectionMatrix()}
+  new ResizeObserver(f).observe(p);f();
+  s.add(new THREE.HemisphereLight(0xffffff,0x556070,.85));
+  var d=new THREE.DirectionalLight(0xfff1de,1.1);d.position.set(4,6,5);s.add(d);
+  var d2=new THREE.DirectionalLight(0x9db8ff,.45);d2.position.set(-5,-2,-3);s.add(d2);
+  return{r:r,s:s,c:c}
+}
+function drag(el,cb){
+  var on=false,px=0,py=0,moved=0;
+  el.addEventListener('pointerdown',function(e){on=true;px=e.clientX;py=e.clientY;moved=0;el.setPointerCapture(e.pointerId)});
+  el.addEventListener('pointermove',function(e){if(!on)return;var dx=e.clientX-px,dy=e.clientY-py;px=e.clientX;py=e.clientY;moved+=Math.abs(dx)+Math.abs(dy);cb(dx,dy)});
+  function end(){on=false}
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+  return function(){return moved}
+}
+function visible(el){var v=true;new IntersectionObserver(function(e){v=e[0].isIntersecting}).observe(el);return function(){return v}}
+
+/* ---------- HERO ---------- */
+var hc=document.getElementById('hc'),H=setup(hc,45,11);
+if(!H){document.getElementById('nogl').style.display='grid';return}
+var gridCol=getComputedStyle(document.documentElement).getPropertyValue('--grid').trim()||'#9aa0ab';
+var grid=new THREE.GridHelper(40,40,0x888e9a,0x888e9a);grid.position.y=-3.2;grid.material.transparent=true;grid.material.opacity=.35;H.s.add(grid);
+var ax=new THREE.AxesHelper(2);ax.position.set(-6,-3.19,-1);H.s.add(ax);
+var pick=[],stage=new THREE.Group();H.s.add(stage);
+function clay(geo,x,y,z,sc){
+  var m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:CLAY,roughness:.85,metalness:0,flatShading:geo.type!=='TorusKnotGeometry'}));
+  m.position.set(x,y,z);m.scale.setScalar(sc||1);
+  var e=new THREE.LineSegments(new THREE.EdgesGeometry(geo,20),new THREE.LineBasicMaterial({color:SEL}));
+  e.visible=false;m.add(e);m.userData={edge:e,sel:false,hover:false,spin:.004,s:sc||1,ph:Math.random()*6.28};
+  stage.add(m);pick.push(m);return m
+}
+var knot=clay(new THREE.TorusKnotGeometry(1.6,.5,220,36),0,.2,0,1);
+var shapes=[[new THREE.IcosahedronGeometry(.8,0)],[new THREE.OctahedronGeometry(.9)],[new THREE.BoxGeometry(1.1,1.1,1.1)],[new THREE.TorusGeometry(.65,.25,14,36)],[new THREE.ConeGeometry(.7,1.4,5)],[new THREE.DodecahedronGeometry(.75)]];
+var fl=shapes.map(function(g,i){return clay(g[0],0,0,0,1)});
+var hv={x:0,y:0},rot={x:.15,y:0},vel={x:0,y:.002},hover=null,selEl=document.getElementById('sel');
+var dm=drag(hc,function(dx,dy){vel.y=dx*.0035;vel.x=dy*.0025;rot.y+=dx*.0055;rot.x=Math.max(-.7,Math.min(.7,rot.x+dy*.004))});
+var ray=new THREE.Raycaster(),mp=new THREE.Vector2();
+function ndc(e){var r=hc.getBoundingClientRect();mp.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);hv.x=mp.x;hv.y=mp.y}
+function hit(){ray.setFromCamera(mp,H.c);var h=ray.intersectObjects(pick,false);return h.length?h[0].object:null}
+hc.addEventListener('pointermove',function(e){ndc(e);hover=hit();hc.style.cursor=hover?'pointer':''});
+hc.addEventListener('pointerup',function(e){
+  if(dm()>6)return;ndc(e);var o=hit();
+  pick.forEach(function(p){p.userData.sel=false});
+  if(o){o.userData.sel=true;o.userData.spin=.12;selEl.textContent='Selected: '+o.geometry.type.replace('Geometry','')}
+  else selEl.textContent='Nothing selected'});
+var hvis=visible(hc),t0=performance.now();
+function hero(){
+  requestAnimationFrame(hero);if(!hvis())return;
+  var t=(performance.now()-t0)/1000,asp=H.c.aspect,R=Math.min(5.2,asp*3.6);
+  if(!reduce){rot.y+=vel.y;vel.y+=(.002-vel.y)*.04;rot.x+=(.15-rot.x)*.01}
+  stage.rotation.y=rot.y;stage.rotation.x=rot.x*.4;
+  H.c.position.x+=(hv.x*.9-H.c.position.x)*.05;H.c.position.y+=(hv.y*.5+.4-H.c.position.y)*.05;H.c.lookAt(0,0,0);
+  knot.position.x=asp>1.1?2.4:0;knot.position.y=asp>1.1?.3:1.2;
+  pick.forEach(function(m,i){
+    var u=m.userData;
+    if(m!==knot){var a=t*.18+i*(6.283/6);m.position.set(Math.cos(a)*R*.9+(asp>1.1?2.4:0),Math.sin(a*1.4+u.ph)*1.8+(asp>1.1?.3:1.2)-.2,Math.sin(a)*3-1)}
+    m.rotation.x+=u.spin*.7;m.rotation.y+=u.spin;u.spin+=(.004-u.spin)*.04;
+    var ts=u.s*(u.hover||u.sel?1.12:1);u.hover=(m===hover);
+    m.scale.setScalar(m.scale.x+(ts-m.scale.x)*.15);
+    u.edge.visible=u.sel||u.hover;
+    m.material.emissive.setHex(u.sel?0x3a1a00:0x000000)});
+  H.r.render(H.s,H.c)
+}
+hero();
+
+/* ---------- VIEWER ---------- */
+var vc=document.getElementById('vc'),V=setup(vc,40,6);
+if(!V)return;
+var cols=[0xd9d4cc,0xe8710a,0x4f8cff,0x2fbf8f,0xe0457b],cur={shape:'knot',mode:'solid',color:cols[0],auto:true};
+var swEl=document.getElementById('colors');
+cols.forEach(function(c,i){var b=document.createElement('button');b.style.background='#'+c.toString(16).padStart(6,'0');b.setAttribute('aria-label','Material colour '+(i+1));b.setAttribute('aria-pressed',i===0);
+  b.onclick=function(){cur.color=c;swEl.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});build()};swEl.appendChild(b)});
+var holder=new THREE.Group();V.s.add(holder);var obj=null;
+function geo(k){
+  if(k==='knot')return new THREE.TorusKnotGeometry(1.1,.34,200,32,2,3);
+  if(k==='crystal')return new THREE.IcosahedronGeometry(1.5,1);
+  if(k==='ring')return new THREE.TorusGeometry(1.3,.45,32,90);
+  if(k==='lattice')return new THREE.BoxGeometry(2,2,2,7,7,7);
+  var g=new THREE.PlaneGeometry(4,4,64,64),p=g.attributes.position;
+  for(var i=0;i<p.count;i++){var x=p.getX(i),y=p.getY(i);p.setZ(i,Math.sin(x*1.4)*.35+Math.cos(y*1.7)*.3+Math.sin((x+y)*3)*.08)}
+  g.rotateX(-Math.PI/2.4);g.computeVertexNormals();return g
+}
+function build(){
+  if(obj){holder.remove(obj);obj.geometry.dispose();obj.material.dispose()}
+  var g=geo(cur.shape),flat=cur.shape==='crystal'||cur.shape==='terrain';
+  if(cur.mode==='solid')obj=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:cur.color,roughness:.7,metalness:.05,flatShading:flat,side:THREE.DoubleSide}));
+  else if(cur.mode==='wire')obj=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:cur.color,wireframe:true}));
+  else obj=new THREE.Points(g,new THREE.PointsMaterial({color:cur.color,size:.035}));
+  holder.add(obj);
+  var v=g.attributes.position.count,tr=(g.index?g.index.count:v)/3;
+  document.getElementById('stats').innerHTML='Vertices <b>'+v.toLocaleString()+'</b> · Triangles <b>'+Math.round(tr).toLocaleString()+'</b>'
+}
+function group(id,attr,key){document.getElementById(id).addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+  this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});cur[key]=b.dataset[attr];build()})}
+group('shapes','s','shape');group('modes','m','mode');
+var ab=document.getElementById('auto');ab.onclick=function(){cur.auto=!cur.auto;ab.setAttribute('aria-pressed',cur.auto)};
+var vr={x:.3,y:0},vv={x:0,y:0};
+drag(vc,function(dx,dy){vr.y+=dx*.01;vr.x+=dy*.01;vv.y=dx*.004;vv.x=dy*.004;cur.auto=false;ab.setAttribute('aria-pressed',false)});
+vc.addEventListener('wheel',function(e){e.preventDefault();V.c.position.z=Math.max(3,Math.min(11,V.c.position.z+e.deltaY*.004))},{passive:false});
+var pts={};vc.addEventListener('pointerdown',function(e){pts[e.pointerId]=e});
+vc.addEventListener('pointermove',function(e){pts[e.pointerId]&&(pts[e.pointerId]=e);var k=Object.keys(pts);
+  if(k.length===2){var a=pts[k[0]],b=pts[k[1]],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(pts.last){V.c.position.z=Math.max(3,Math.min(11,V.c.position.z-(d-pts.last)*.02))}pts.last=d}});
+function up(e){delete pts[e.pointerId];delete pts.last}
+vc.addEventListener('pointerup',up);vc.addEventListener('pointercancel',up);
+build();
+var vvis=visible(vc);
+function view(){
+  requestAnimationFrame(view);if(!vvis())return;
+  if(cur.auto&&!reduce)vr.y+=.006;
+  holder.rotation.y+=(vr.y-holder.rotation.y)*.12;holder.rotation.x+=(vr.x-holder.rotation.x)*.12;
+  V.r.render(V.s,V.c)
+}
+view();
+})();
+</script>
+</body>
+</html>
